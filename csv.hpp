@@ -32,7 +32,6 @@ class csv
          std::tuple<T, Ts...> row;
          std::string buf;
 
-         csvf.seekg(-1, std::ios_base::cur);
          std::getline(csvf, buf);
          std::stringstream s(buf);
 
@@ -44,7 +43,7 @@ class csv
       {
          std::string buf;
          std::getline(csvf, buf);
-         csvf.seekg(-buf.length(), std::ios_base::cur);
+         csvf.seekg(-(buf.length()+1), std::ios_base::cur);
          return !(buf.empty());
       }
 
