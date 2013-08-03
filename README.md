@@ -14,6 +14,6 @@ csv-file:
 2.1, R  
 
 then:
-csv<double, char> c("csvf.csv");
+csv&lt;double, char&gt; c("csvf.csv");
 
 also refer to the main.cpp.
