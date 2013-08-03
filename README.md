@@ -9,9 +9,9 @@ The constructor takes 3 arguments, the first being the filepath, the second the 
 whether a header is used. The delimiter and header are default comma and false respectively.
 
 ###Example:
-csv-file:
-1.3, Q
-2.1, R
+csv-file:  
+1.3, Q  
+2.1, R  
 
 then:
 csv<double, char> c("csvf.csv");
