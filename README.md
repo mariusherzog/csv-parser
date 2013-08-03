@@ -7,7 +7,7 @@ simple class used to parse a csv file.
 Instantiate the template class with the data types for the respective columns of the csv file.
 The constructor takes 3 arguments, the first being the filepath, the second the column delimiter and the third denotes 
 whether a header is used. The delimiter and header are default comma and false respectively.  
-Using the template specialization std::string (csv&lt;std::string&gt; c("a.csv");) will return raw rows regardless
+Using the template specialization std::string (csv&lt;std::string&gt; c("a.csv");) will return raw rows regardless of
 the number of columns.
 
 ###Example:
