@@ -8,11 +8,28 @@
 #include <stdexcept>
 #include <limits>
 
-#include <iostream>
 
-class Acsv
+template <typename T, typename... Ts> class csv;
+
+template <>
+class csv<std::string>
 {
    public:
+      explicit csv(std::string file, char sep = ',', bool header = false):
+         csvf(file),
+         sep(sep)
+      {
+         if (!csvf.is_open()) {
+            throw std::runtime_error("Could not open file!\n");
+         }
+
+         if (header) {
+            std::getline(csvf, headerns);
+         } else {
+            headerns = "";
+         }
+      }
+
       bool has_dataset()
       {
          std::string buf;
@@ -26,25 +43,7 @@ class Acsv
          return headerns;
       }
 
-
-   protected:
-      explicit Acsv(std::string file, char sep, bool header):
-         csvf(file),
-         sep(sep),
-         header(header)
-      {
-         if (!csvf.is_open()) {
-            throw std::runtime_error("Could not open file!\n");
-         }
-
-         if (header) {
-            std::getline(csvf, headerns);
-         } else {
-            headerns = "";
-         }
-      }
-
-      inline std::string readrawline()
+      std::string readline()
       {
          csvf.clear();
          std::string row;
@@ -52,7 +51,7 @@ class Acsv
          return row;
       }
 
-      inline std::string readrawline(unsigned int l)
+      std::string readline(unsigned int l)
       {
          csvf.clear();
          std::streampos befpos = csvf.tellg();
@@ -69,37 +68,36 @@ class Acsv
          return row;
       }
 
-      char delim()
+   protected:
+      inline char delim()
       {
          return sep;
       }
 
 
    private:
-      std::ifstream csvf;
+      std::fstream csvf;
       char sep;
-      bool header;
       std::string headerns;
 
-      Acsv& operator=(const Acsv &rhs);
-      Acsv(const Acsv &rhs);
+      csv& operator=(const csv &rhs);
+      csv(const csv &rhs);
+
 };
 
-
-
 template <typename T, typename... Ts>
-class csv: public Acsv
+class csv: public csv<std::string>
 {
    public:
       explicit csv(std::string file, char sep = ',', bool header = false):
-         Acsv(file, sep, header)
+         csv<std::string>(file, sep, header)
       {
       }
 
       std::tuple<T, Ts...> readline()
       {
          std::tuple<T, Ts...> row;
-         std::string buf = readrawline();
+         std::string buf = csv<std::string>::readline();
          std::stringstream s(buf);
 
          fill(row, s);
@@ -109,7 +107,7 @@ class csv: public Acsv
       std::tuple<T, Ts...> readline(unsigned int l)
       {
          std::tuple<T, Ts...> row;
-         std::string buf = readrawline(l);
+         std::string buf = csv<std::string>::readline(l);
          std::stringstream s(buf);
 
          fill(row, s);
@@ -133,28 +131,6 @@ class csv: public Acsv
          std::stringstream rowstream(col);
          rowstream >> std::get<I>(t);
          fill<I+1, Tp...>(t, s);
-      }
-
-};
-
-
-template <>
-class csv<std::string>: public Acsv
-{
-   public:
-      explicit csv(std::string file, char sep = ',', bool header = false):
-         Acsv(file, sep, header)
-      {
-      }
-
-      std::string readline()
-      {
-         return readrawline();
-      }
-
-      std::string readline(unsigned int l)
-      {
-         return readrawline(l);
       }
 
 };
