@@ -6,7 +6,9 @@
 #include <string>
 #include <tuple>
 #include <stdexcept>
+#include <limits>
 
+#include <iostream>
 
 class Acsv
 {
@@ -42,10 +44,28 @@ class Acsv
          }
       }
 
-      std::string readrawline()
+      inline std::string readrawline()
       {
+         csvf.clear();
          std::string row;
          std::getline(csvf, row);
+         return row;
+      }
+
+      inline std::string readrawline(unsigned int l)
+      {
+         csvf.clear();
+         std::streampos befpos = csvf.tellg();
+         csvf.seekg(0, std::ios_base::beg);
+         for (unsigned int i=1; i<l; ++i) {
+            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+         }
+
+         std::string row;
+         std::getline(csvf, row);
+
+         csvf.clear();
+         csvf.seekg(befpos, std::ios_base::beg);
          return row;
       }
 
@@ -80,6 +100,16 @@ class csv: public Acsv
       {
          std::tuple<T, Ts...> row;
          std::string buf = readrawline();
+         std::stringstream s(buf);
+
+         fill(row, s);
+         return row;
+      }
+
+      std::tuple<T, Ts...> readline(unsigned int l)
+      {
+         std::tuple<T, Ts...> row;
+         std::string buf = readrawline(l);
          std::stringstream s(buf);
 
          fill(row, s);
@@ -121,6 +151,12 @@ class csv<std::string>: public Acsv
       {
          return readrawline();
       }
+
+      std::string readline(unsigned int l)
+      {
+         return readrawline(l);
+      }
+
 };
 
 
