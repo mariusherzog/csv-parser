@@ -68,8 +68,19 @@ class csv<std::string>
          return row;
       }
 
+      void append(std::string s)
+      {
+         csvf.clear();
+         std::streampos befpos = csvf.tellg();
+         csvf.seekg(0, std::ios_base::end);
+
+         csvf << s << "\n";
+
+         csvf.seekg(befpos, std::ios_base::beg);
+      }
+
    protected:
-      inline char delim()
+      inline char delim() const
       {
          return sep;
       }
@@ -77,9 +88,8 @@ class csv<std::string>
 
    private:
       std::fstream csvf;
-      char sep;
       std::string headerns;
-
+      char sep;
       csv& operator=(const csv &rhs);
       csv(const csv &rhs);
 
@@ -100,7 +110,7 @@ class csv: public csv<std::string>
          std::string buf = csv<std::string>::readline();
          std::stringstream s(buf);
 
-         fill(row, s);
+         filltuple(row, s);
          return row;
       }
 
@@ -110,27 +120,52 @@ class csv: public csv<std::string>
          std::string buf = csv<std::string>::readline(l);
          std::stringstream s(buf);
 
-         fill(row, s);
+         filltuple(row, s);
          return row;
+      }
+
+      void append(std::tuple<T, Ts...> t)
+      {
+         std::stringstream s;
+         fillstream(t, s);
+         std::string row;
+         s >> row;
+         csv<std::string>::append(row);
       }
 
 
    private:
       template<std::size_t I = 0, typename... Tp>
       inline typename std::enable_if<I == sizeof...(Tp), void>::type
-      fill(std::tuple<Tp...>&, std::stringstream&)
+      filltuple(std::tuple<Tp...>&, std::stringstream&)
       { }
 
       template<std::size_t I = 0, typename... Tp>
       inline typename std::enable_if<(I < sizeof...(Tp)), void>::type
-      fill(std::tuple<Tp...>& t, std::stringstream& s)
+      filltuple(std::tuple<Tp...>& t, std::stringstream& s)
       {
          std::string col;
          std::getline(s, col, delim());
 
          std::stringstream rowstream(col);
          rowstream >> std::get<I>(t);
-         fill<I+1, Tp...>(t, s);
+         filltuple<I+1, Tp...>(t, s);
+      }
+
+
+      template<std::size_t I = 0, typename... Tp>
+      inline typename std::enable_if<I == sizeof...(Tp), void>::type
+      fillstream(std::tuple<Tp...>&, std::stringstream& s)
+      {
+         s << "\n";
+      }
+
+      template<std::size_t I = 0, typename... Tp>
+      inline typename std::enable_if<(I < sizeof...(Tp)), void>::type
+      fillstream(std::tuple<Tp...>& t, std::stringstream& s)
+      {
+         s << std::get<I>(t) << delim();
+         fillstream<I+1, Tp...>(t, s);
       }
 
 };
