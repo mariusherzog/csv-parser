@@ -9,14 +9,13 @@
 #include <limits>
 
 
-template <typename T, typename... Ts> class csv;
-
-template <>
-class csv<std::string>
+template <typename T, typename... Ts>
+class csv
 {
    public:
       explicit csv(std::string file, char sep = ',', bool header = false):
          csvf(file),
+         header(header),
          sep(sep)
       {
          if (!csvf.is_open()) {
@@ -43,85 +42,34 @@ class csv<std::string>
          return headerns;
       }
 
-      std::string readline()
-      {
-         csvf.clear();
-         std::string row;
-         std::getline(csvf, row);
-         return row;
-      }
-
-      std::string readline(unsigned int l)
-      {
-         csvf.clear();
-         std::streampos befpos = csvf.tellg();
-         csvf.seekg(0, std::ios_base::beg);
-         for (unsigned int i=1; i<l; ++i) {
-            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-         }
-
-         std::string row;
-         std::getline(csvf, row);
-
-         csvf.clear();
-         csvf.seekg(befpos, std::ios_base::beg);
-         return row;
-      }
-
-      void append(std::string s)
-      {
-         csvf.clear();
-         std::streampos befpos = csvf.tellg();
-         csvf.seekg(0, std::ios_base::end);
-
-         csvf << s << "\n";
-
-         csvf.seekg(befpos, std::ios_base::beg);
-      }
-
-   protected:
-      inline char delim() const
-      {
-         return sep;
-      }
-
-
-   private:
-      std::fstream csvf;
-      std::string headerns;
-      char sep;
-      csv& operator=(const csv &rhs);
-      csv(const csv &rhs);
-
-};
-
-template <typename T, typename... Ts>
-class csv: public csv<std::string>
-{
-   public:
-      explicit csv(std::string file, char sep = ',', bool header = false):
-         csv<std::string>(file, sep, header)
-      {
-      }
-
       std::tuple<T, Ts...> readline()
       {
          std::tuple<T, Ts...> row;
-         std::string buf = csv<std::string>::readline();
+         std::string buf = raw_readline();
          std::stringstream s(buf);
 
          filltuple(row, s);
          return row;
       }
 
-      std::tuple<T, Ts...> readline(unsigned int l)
+      std::string raw_readline()
       {
-         std::tuple<T, Ts...> row;
-         std::string buf = csv<std::string>::readline(l);
-         std::stringstream s(buf);
-
-         filltuple(row, s);
+         csvf.clear();
+         std::string row;
+         std::getline(csvf, row);
          return row;
+      }
+
+      void move_to(unsigned int l)
+      {
+         csvf.clear();
+         csvf.seekg(0, std::ios_base::beg);
+         if (header) {
+            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+         }
+         for (unsigned int i=0; i<l; ++i) {
+            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+         }
       }
 
       void append(std::tuple<T, Ts...> t)
@@ -133,8 +81,29 @@ class csv: public csv<std::string>
          csv<std::string>::append(row);
       }
 
+      void append(std::string s)
+      {
+         csvf.clear(csvf.rdstate() & ~std::istream::failbit);
+         std::streampos befpos = csvf.tellg();
+         csvf.seekg(0, std::ios_base::end);
+
+         csvf << s << "\n";
+
+         csvf.seekg(befpos, std::ios_base::beg);
+      }
+
 
    private:
+      std::fstream csvf;
+      std::string headerns;
+      bool header;
+      char sep;
+
+
+
+      csv& operator=(const csv &rhs);
+      csv(const csv &rhs);
+
       template<std::size_t I = 0, typename... Tp>
       inline typename std::enable_if<I == sizeof...(Tp), void>::type
       filltuple(std::tuple<Tp...>&, std::stringstream&)
@@ -145,7 +114,7 @@ class csv: public csv<std::string>
       filltuple(std::tuple<Tp...>& t, std::stringstream& s)
       {
          std::string col;
-         std::getline(s, col, delim());
+         std::getline(s, col, sep);
 
          std::stringstream rowstream(col);
          rowstream >> std::get<I>(t);
@@ -164,7 +133,7 @@ class csv: public csv<std::string>
       inline typename std::enable_if<(I < sizeof...(Tp)), void>::type
       fillstream(std::tuple<Tp...>& t, std::stringstream& s)
       {
-         s << std::get<I>(t) << delim();
+         s << std::get<I>(t) << sep;
          fillstream<I+1, Tp...>(t, s);
       }
 
