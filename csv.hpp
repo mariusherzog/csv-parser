@@ -65,10 +65,10 @@ class csv
          csvf.clear();
          csvf.seekg(0, std::ios_base::beg);
          if (header) {
-            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            csvf.ignore(std::numeric_limits<std::streamsize>::max(), linedelim);
          }
          for (unsigned int i=0; i<l; ++i) {
-            csvf.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+            csvf.ignore(std::numeric_limits<std::streamsize>::max(), linedelim);
          }
       }
 
@@ -93,11 +93,21 @@ class csv
       }
 
 
+
+      char set_line_delimiter(char d)
+      {
+         char old = linedelim;
+         linedelim = d;
+         return old;
+      }
+
    private:
       std::fstream csvf;
       std::string headerns;
       bool header;
       char sep;
+
+      static char linedelim;
 
 
 
@@ -126,7 +136,7 @@ class csv
       inline typename std::enable_if<I == sizeof...(Tp), void>::type
       fillstream(std::tuple<Tp...>&, std::stringstream& s)
       {
-         s << "\n";
+         s << linedelim;
       }
 
       template<std::size_t I = 0, typename... Tp>
@@ -138,6 +148,9 @@ class csv
       }
 
 };
+
+template <typename T, typename... Ts>
+char csv<T, Ts...>::linedelim = '\n';
 
 
 #endif // CSV_HPP
