@@ -8,6 +8,8 @@
 #include <stdexcept>
 #include <limits>
 
+namespace csv
+{
 
 template <typename T, typename... Ts>
 class csv
@@ -152,5 +154,6 @@ class csv
 template <typename T, typename... Ts>
 char csv<T, Ts...>::linedelim = '\n';
 
+}
 
 #endif // CSV_HPP

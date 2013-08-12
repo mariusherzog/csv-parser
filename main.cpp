@@ -3,6 +3,7 @@
 #include <vector>
 #include <tuple>
 
+
 #include "csv.hpp"
 
 // small program to test the class
@@ -20,11 +21,12 @@ struct testy
 };
 
 
-int main(int, char)
-{
 
+
+int main(int, char**)
+{
    // data type for each field
-   csv<int, std::string, double> f("../csv/tcsv.csv", ';', true);
+   csv::csv<int, std::string, double> f("../csv/tcsv.csv", ';', true);
 
    std::vector<testy> testies;
    while (f.has_dataset()) {
